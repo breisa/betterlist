@@ -590,7 +590,7 @@
   }
 
   function formatItemText(text) {
-    const match = text.match(/^(\d+(?:[.,]\d+)?[a-zA-Z]*)/);
+    const match = text.match(/^(\d+(?:[.,]\d+)?[a-zA-Z]*)\s[^\s]+/);
     if (match && match[1].length > 0) {
       return `<span class="item-amount">${escapeHtml(match[1])}</span>${escapeHtml(text.slice(match[1].length))}`;
     }
