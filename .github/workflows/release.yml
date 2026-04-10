@@ -1,0 +1,36 @@
+name: Build & Release BetterList
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write  # Required to create releases & upload assets
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Make build script executable & run
+        run: |
+          chmod +x ./build.sh
+          ./build.sh
+
+      - name: Verify build output
+        run: |
+          if [ ! -f "betterlist.xdc" ]; then
+            echo "❌ Error: betterlist.xdc was not generated!"
+            exit 1
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: betterlist.xdc
+          generate_release_notes: true
+          draft: false
