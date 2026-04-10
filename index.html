@@ -426,6 +426,16 @@
     }
     .lang-option:hover { background: var(--surface2); }
     .lang-option .lang-check { color: var(--accent); font-weight: 700; }
+
+    /* ── Confetti Canvas ── */
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1000;
+    }
   </style>
 </head>
 <body>
@@ -481,6 +491,7 @@
 </div>
 
 <div id="toast"></div>
+<canvas id="confetti-canvas"></canvas>
 
 <script>
 (function() {
@@ -584,6 +595,55 @@
       return `<span class="item-amount">${escapeHtml(match[1])}</span>${escapeHtml(text.slice(match[1].length))}`;
     }
     return escapeHtml(text);
+  }
+
+  function launchConfetti() {
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const particles = [];
+    const colors = ['#339af0', '#51cf66', '#fcc419', '#ff6b6b', '#cc5de8', '#20c997'];
+    for (let i = 0; i < 120; i++) {
+      particles.push({
+        x: canvas.width / 2 + (Math.random() - 0.5) * 120,
+        y: canvas.height,
+        vx: (Math.random() - 0.5) * 16,
+        vy: -Math.random() * 18 - 6,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        size: Math.random() * 8 + 4,
+        rotation: Math.random() * 360,
+        rotSpeed: (Math.random() - 0.5) * 12,
+        gravity: 0.35,
+        opacity: 1,
+        decay: 0.005 + Math.random() * 0.005
+      });
+    }
+    let animId;
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      let active = false;
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.vy += p.gravity;
+        p.y += p.vy;
+        p.rotation += p.rotSpeed;
+        p.opacity -= p.decay;
+        if (p.opacity > 0) {
+          active = true;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rotation * Math.PI / 180);
+          ctx.globalAlpha = Math.max(0, p.opacity);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+          ctx.restore();
+        }
+      });
+      if (active) animId = requestAnimationFrame(draw);
+      else { ctx.clearRect(0, 0, canvas.width, canvas.height); cancelAnimationFrame(animId); }
+    }
+    draw();
   }
 
   function applyOp(op) {
@@ -803,7 +863,12 @@
       el.addEventListener('click', (e) => {
         e.stopPropagation();
         const item = state.items.find(i => i.id === el.dataset.check);
-        if (item) sendOp({ id: uid(), type: 'check', itemId: item.id, checked: !item.checked });
+        if (item) {
+          sendOp({ id: uid(), type: 'check', itemId: item.id, checked: !item.checked });
+          if (item.checked && state.items.every(i => i.checked)) {
+            launchConfetti();
+          }
+        }
       });
     });
 
