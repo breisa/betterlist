@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <title>Shopping List</title>
+  <title>BetterList</title>
   <script src="webxdc.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -168,6 +168,8 @@
       overscroll-behavior: contain;
       padding: 12px 12px 24px;
       scroll-behavior: smooth;
+      display: flex;
+      flex-direction: column;
     }
 
     #item-list {
@@ -181,6 +183,11 @@
       color: var(--text-muted);
       padding: 48px 24px;
       font-size: 15px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
     .empty-state svg { margin-bottom: 12px; opacity: 0.4; }
 
@@ -550,6 +557,7 @@
   const state = {
     items: [],
     sortChecked: false,
+    lang: lang,
     listName: t('defaultListName')
   };
   const seenOps = new Set();
@@ -613,6 +621,11 @@
       case 'clear-checked': state.items = state.items.filter(i => !i.checked); break;
       case 'clear-all':     state.items = []; break;
       case 'sort-toggle':   state.sortChecked = op.value; break;
+      case 'set-lang':
+        state.lang = op.lang;
+        lang = op.lang;
+        localStorage.setItem('lang', lang);
+        break;
       case 'rename':        state.listName = op.name; break;
     }
   }
@@ -636,6 +649,7 @@
       case 'edit':          infoMsg = L.info_edit(selfName, listName); break;
       case 'reorder':       infoMsg = L.info_reorder(selfName, listName); break;
       case 'sort-toggle':   infoMsg = L.info_sortToggle(selfName, listName); break;
+      case 'set-lang':      infoMsg = L.info_changed(selfName, listName); break;
     }
 
     if (window.webxdc) {
@@ -973,8 +987,8 @@
       btn.addEventListener('click', () => {
         lang = code;
         localStorage.setItem('lang', lang);
+        sendOp({ id: uid(), type: 'set-lang', lang: code });
         langModal.style.display = 'none';
-        render();
       });
       opts.appendChild(btn);
     }
