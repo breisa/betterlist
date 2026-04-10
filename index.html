@@ -83,6 +83,7 @@
 
     .header-title {
       flex: 1;
+      min-width: 0;
       background: transparent;
       border: 1.5px solid transparent;
       color: var(--text);
@@ -384,6 +385,38 @@
     .menu-item:hover { background: var(--surface2); }
     .menu-item.danger { color: var(--danger); }
     .menu-divider { height: 1px; background: var(--border); margin: 2px 0; }
+
+    /* ── Language modal ── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 300;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .modal-sheet {
+      background: var(--surface);
+      border-radius: var(--radius) var(--radius) 0 0;
+      width: 100%; max-width: 480px;
+      padding: 8px 0 max(env(safe-area-inset-bottom), 16px);
+    }
+    .modal-title {
+      padding: 14px 20px 10px;
+      font-weight: 700; font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.6px;
+    }
+    .lang-option {
+      display: flex; align-items: center; justify-content: space-between;
+      width: 100%; background: none; border: none;
+      padding: 13px 20px;
+      font-size: 16px; color: var(--text);
+      cursor: pointer; text-align: left;
+      transition: background var(--transition);
+    }
+    .lang-option:hover { background: var(--surface2); }
+    .lang-option .lang-check { color: var(--accent); font-weight: 700; }
   </style>
 </head>
 <body>
@@ -414,7 +447,7 @@
     <div class="dropdown" id="dropdown">
       <button class="menu-item danger" id="clear-all-btn">Clear all items</button>
       <div class="menu-divider"></div>
-      <button class="menu-item" id="lang-btn">Deutsch</button>
+      <button class="menu-item" id="lang-btn">Language</button>
     </div>
   </div>
 </header>
@@ -431,6 +464,13 @@
   <div id="item-list"></div>
 </div>
 
+<div id="lang-modal" class="modal-overlay" style="display:none">
+  <div class="modal-sheet">
+    <div class="modal-title" id="lang-modal-title">Language</div>
+    <div id="lang-options"></div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -440,12 +480,14 @@
   // ──────────────────────────────────────────────
   const LANGS = {
     en: {
+      nativeName: 'English',
       defaultListName: '🛒 Shopping List',
       addPlaceholder: 'Add an item…',
       addBtn: 'Add',
       sortTitle: 'Move checked to bottom',
       clearCheckedTitle: 'Remove all checked items',
       menuTitle: 'Menu',
+      langMenuBtn: 'Language',
       emptyTitle: 'Your list is empty',
       emptyHint: 'Add items above to get started',
       checkedSection: 'Checked',
@@ -455,15 +497,27 @@
       removed: n => `Removed ${n} item${n === 1 ? '' : 's'}`,
       cleared: 'Cleared all items',
       clearAll: 'Clear all items',
-      switchLang: 'Deutsch',
+      info_updated:     (n, l) => `${n} updated '${l}'`,
+      info_add:         (n, l) => `${n} added an item to '${l}'`,
+      info_check:       (n, l) => `${n} checked an item on '${l}'`,
+      info_delete:      (n, l) => `${n} deleted an item from '${l}'`,
+      info_clearChecked:(n, l) => `${n} cleared checked items on '${l}'`,
+      info_clearAll:    (n, l) => `${n} cleared all items on '${l}'`,
+      info_rename:      (n, l) => `${n} renamed the list to '${l}'`,
+      info_edit:        (n, l) => `${n} edited an item on '${l}'`,
+      info_reorder:     (n, l) => `${n} reordered '${l}'`,
+      info_sortToggle:  (n, l) => `${n} toggled sort on '${l}'`,
+      info_changed:     (n, l) => `${n} changed '${l}'`,
     },
     de: {
+      nativeName: 'Deutsch',
       defaultListName: '🛒 Einkaufsliste',
       addPlaceholder: 'Element hinzufügen…',
       addBtn: 'Hinzufügen',
       sortTitle: 'Erledigte nach unten sortieren',
       clearCheckedTitle: 'Abgehakte Elemente entfernen',
       menuTitle: 'Menü',
+      langMenuBtn: 'Sprache',
       emptyTitle: 'Deine Liste ist leer',
       emptyHint: 'Füge oben Elemente hinzu',
       checkedSection: 'Erledigt',
@@ -473,7 +527,17 @@
       removed: n => `${n} Element${n === 1 ? '' : 'e'} entfernt`,
       cleared: 'Alle Elemente gelöscht',
       clearAll: 'Alle Elemente löschen',
-      switchLang: 'English',
+      info_updated:     (n, l) => `${n} hat '${l}' aktualisiert`,
+      info_add:         (n, l) => `${n} hat ein Element zu '${l}' hinzugefügt`,
+      info_check:       (n, l) => `${n} hat ein Element in '${l}' abgehakt`,
+      info_delete:      (n, l) => `${n} hat ein Element aus '${l}' gelöscht`,
+      info_clearChecked:(n, l) => `${n} hat abgehakte Elemente in '${l}' entfernt`,
+      info_clearAll:    (n, l) => `${n} hat alle Elemente in '${l}' gelöscht`,
+      info_rename:      (n, l) => `${n} hat die Liste in '${l}' umbenannt`,
+      info_edit:        (n, l) => `${n} hat ein Element in '${l}' bearbeitet`,
+      info_reorder:     (n, l) => `${n} hat '${l}' neu angeordnet`,
+      info_sortToggle:  (n, l) => `${n} hat die Sortierung in '${l}' umgeschaltet`,
+      info_changed:     (n, l) => `${n} hat '${l}' geändert`,
     }
   };
 
@@ -560,17 +624,18 @@
 
     const selfName = (window.webxdc && window.webxdc.selfName) || 'User';
     const listName = state.listName || 'Shopping List';
-    let infoMsg = `${selfName} updated '${listName}'`;
+    const L = LANGS[lang];
+    let infoMsg = L.info_updated(selfName, listName);
     switch (op.type) {
-      case 'add':           infoMsg = `${selfName} added an item to '${listName}'`; break;
-      case 'check':         infoMsg = `${selfName} checked an item on '${listName}'`; break;
-      case 'delete':        infoMsg = `${selfName} deleted an item from '${listName}'`; break;
-      case 'clear-checked': infoMsg = `${selfName} cleared checked items on '${listName}'`; break;
-      case 'clear-all':     infoMsg = `${selfName} cleared all items on '${listName}'`; break;
-      case 'rename':        infoMsg = `${selfName} renamed the list to '${listName}'`; break;
-      case 'edit':          infoMsg = `${selfName} edited an item on '${listName}'`; break;
-      case 'reorder':       infoMsg = `${selfName} reordered '${listName}'`; break;
-      case 'sort-toggle':   infoMsg = `${selfName} toggled sort on '${listName}'`; break;
+      case 'add':           infoMsg = L.info_add(selfName, listName); break;
+      case 'check':         infoMsg = L.info_check(selfName, listName); break;
+      case 'delete':        infoMsg = L.info_delete(selfName, listName); break;
+      case 'clear-checked': infoMsg = L.info_clearChecked(selfName, listName); break;
+      case 'clear-all':     infoMsg = L.info_clearAll(selfName, listName); break;
+      case 'rename':        infoMsg = L.info_rename(selfName, listName); break;
+      case 'edit':          infoMsg = L.info_edit(selfName, listName); break;
+      case 'reorder':       infoMsg = L.info_reorder(selfName, listName); break;
+      case 'sort-toggle':   infoMsg = L.info_sortToggle(selfName, listName); break;
     }
 
     if (window.webxdc) {
@@ -632,7 +697,7 @@
       try {
         const selfName = (window.webxdc && window.webxdc.selfName) || 'A user';
         const listName = state.listName || 'Shopping List';
-        window.webxdc.sendUpdate({ payload: null, info: `${selfName} changed '${listName}'` }, "");
+        window.webxdc.sendUpdate({ payload: null, info: LANGS[lang].info_changed(selfName, listName) }, "");
       } catch(e) {}
     }
   });
@@ -648,7 +713,7 @@
     document.getElementById('clear-checked-btn').title = t('clearCheckedTitle');
     document.getElementById('menu-btn').title = t('menuTitle');
     document.getElementById('clear-all-btn').textContent = t('clearAll');
-    document.getElementById('lang-btn').textContent = t('switchLang');
+    document.getElementById('lang-btn').textContent = t('langMenuBtn');
   }
 
   function render() {
@@ -893,10 +958,29 @@
 
   document.getElementById('lang-btn').addEventListener('click', () => {
     dropdown.classList.remove('open');
-    lang = lang === 'en' ? 'de' : 'en';
-    localStorage.setItem('lang', lang);
-    render();
+    openLangModal();
   });
+
+  const langModal = document.getElementById('lang-modal');
+  function openLangModal() {
+    document.getElementById('lang-modal-title').textContent = t('langMenuBtn');
+    const opts = document.getElementById('lang-options');
+    opts.innerHTML = '';
+    for (const [code, strings] of Object.entries(LANGS)) {
+      const btn = document.createElement('button');
+      btn.className = 'lang-option';
+      btn.innerHTML = `<span>${escapeHtml(strings.nativeName)}</span>${code === lang ? '<span class="lang-check">✓</span>' : ''}`;
+      btn.addEventListener('click', () => {
+        lang = code;
+        localStorage.setItem('lang', lang);
+        langModal.style.display = 'none';
+        render();
+      });
+      opts.appendChild(btn);
+    }
+    langModal.style.display = 'flex';
+  }
+  langModal.addEventListener('click', e => { if (e.target === langModal) langModal.style.display = 'none'; });
 
   // ──────────────────────────────────────────────
   //  Toast
