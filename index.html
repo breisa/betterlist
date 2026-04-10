@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Shopping List</title>
+  <script src="webxdc.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f8f9fa;
+      --surface: #ffffff;
+      --surface2: #f1f3f5;
+      --border: #dee2e6;
+      --text: #212529;
+      --text-muted: #868e96;
+      --text-checked: #adb5bd;
+      --accent: #339af0;
+      --accent-hover: #228be6;
+      --danger: #fa5252;
+      --danger-hover: #f03e3e;
+      --check-bg: #339af0;
+      --amount-color: #8a919b;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+      --shadow-drag: 0 8px 24px rgba(0,0,0,0.15);
+      --radius: 10px;
+      --transition: 0.15s ease;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #141517;
+        --surface: #1a1b1e;
+        --surface2: #25262b;
+        --border: #373a40;
+        --text: #e9ecef;
+        --text-muted: #868e96;
+        --text-checked: #5c6370;
+        --accent: #4dabf7;
+        --accent-hover: #74c0fc;
+        --danger: #ff6b6b;
+        --danger-hover: #ff8787;
+        --check-bg: #4dabf7;
+        --amount-color: #7a8089;
+        --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+        --shadow-drag: 0 8px 24px rgba(0,0,0,0.5);
+      }
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 0;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-title {
+      flex: 1;
+      background: transparent;
+      border: 1.5px solid transparent;
+      color: var(--text);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      border-radius: 8px;
+      padding: 4px 6px;
+      outline: none;
+      transition: border-color var(--transition), background var(--transition);
+    }
+    .header-title:focus {
+      background: var(--surface2);
+      border-color: var(--border);
+    }
+
+    .header-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 6px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      transition: color var(--transition), background var(--transition);
+      flex-shrink: 0;
+    }
+    .header-btn:hover { color: var(--text); background: var(--surface2); }
+    .header-btn.active { color: var(--accent); }
+    .header-btn.danger:hover { color: var(--danger); }
+
+    /* ── Add Item ── */
+    .add-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .add-bar input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1.5px solid transparent;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 15px;
+      color: var(--text);
+      outline: none;
+      transition: border-color var(--transition);
+      min-width: 0;
+    }
+    .add-bar input::placeholder { color: var(--text-muted); }
+    .add-bar input:focus { border-color: var(--accent); }
+
+    .add-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: background var(--transition), transform 0.1s ease;
+      white-space: nowrap;
+    }
+    .add-btn:hover { background: var(--accent-hover); }
+    .add-btn:active { transform: scale(0.96); }
+
+    /* ── List ── */
+    .list-container {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+      overscroll-behavior: contain;
+      padding: 12px 12px 24px;
+      scroll-behavior: smooth;
+    }
+
+    #item-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 48px 24px;
+      font-size: 15px;
+    }
+    .empty-state svg { margin-bottom: 12px; opacity: 0.4; }
+
+    /* ── Item ── */
+    .item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      box-shadow: var(--shadow);
+      transition: box-shadow var(--transition), opacity var(--transition), transform var(--transition);
+      user-select: none;
+    }
+
+    .item.dragging { opacity: 0.4; }
+    .item.drag-over { box-shadow: 0 0 0 2px var(--accent); }
+    .item.ghost {
+      opacity: 0.85;
+      box-shadow: var(--shadow-drag);
+      pointer-events: none;
+      position: fixed;
+      z-index: 1000;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      transform: scale(1.02) rotate(1deg);
+    }
+
+    .drag-handle {
+      color: var(--text-muted);
+      opacity: 0.5;
+      cursor: grab;
+      flex-shrink: 0;
+      padding: 2px;
+      touch-action: none;
+    }
+    .drag-handle:active { cursor: grabbing; }
+
+    .checkbox {
+      width: 22px;
+      height: 22px;
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      flex-shrink: 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background var(--transition), border-color var(--transition);
+    }
+    .checkbox:hover { border-color: var(--accent); }
+    .item.checked .checkbox {
+      background: var(--check-bg);
+      border-color: var(--check-bg);
+    }
+
+    .item-text {
+      flex: 1;
+      font-size: 15px;
+      min-width: 0;
+      overflow-wrap: break-word;
+      transition: color var(--transition), text-decoration var(--transition);
+      cursor: text;
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+    .item-text:hover { background: var(--surface2); }
+    .item.checked .item-text {
+      color: var(--text-checked);
+      text-decoration: line-through;
+    }
+
+    .item-amount {
+      color: var(--amount-color);
+      font-weight: 600;
+      margin-right: 3px;
+    }
+
+    .edit-input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1.5px solid var(--accent);
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 15px;
+      color: var(--text);
+      outline: none;
+      min-width: 0;
+    }
+
+    .delete-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 4px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      opacity: 0;
+      transition: opacity var(--transition), color var(--transition);
+      flex-shrink: 0;
+    }
+    .item:hover .delete-btn { opacity: 1; }
+    .delete-btn:hover { color: var(--danger); }
+
+    /* touch: always show delete on touch devices */
+    @media (hover: none) {
+      .delete-btn { opacity: 0.4; }
+    }
+
+    /* ── Section divider ── */
+    .section-divider {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 2px;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .section-divider::before, .section-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--text);
+      color: var(--surface);
+      padding: 10px 18px;
+      border-radius: 24px;
+      font-size: 13px;
+      font-weight: 500;
+      opacity: 0;
+      transition: transform 0.25s ease, opacity 0.25s ease;
+      z-index: 999;
+      white-space: nowrap;
+      pointer-events: none;
+      max-width: calc(100% - 32px);
+      text-align: center;
+    }
+    #toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* ── Loading ── */
+    #loading {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      transition: opacity 0.3s ease;
+    }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div id="loading"><div class="spinner"></div></div>
+
+<header>
+  <input type="text" class="header-title" id="list-name-input" value="🛒 Shopping List" maxlength="50">
+  <button class="header-btn" id="sort-toggle-btn" title="Move checked to bottom">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+      <line x1="8" y1="18" x2="21" y2="18"/><polyline points="3 6 4 7 6 5"/>
+      <polyline points="3 12 4 13 6 11"/><polyline points="3 18 4 19 6 17"/>
+    </svg>
+  </button>
+  <button class="header-btn danger" id="clear-checked-btn" title="Remove all checked items">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+      <path d="M10 11v6"/><path d="M14 11v6"/>
+      <path d="M9 6V4h6v2"/>
+    </svg>
+  </button>
+</header>
+
+<div class="add-bar">
+  <input type="text" id="new-item-input" placeholder="Add an item…" autocomplete="off" maxlength="200">
+  <button class="add-btn" id="add-btn">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Add
+  </button>
+</div>
+
+<div class="list-container">
+  <div id="item-list"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function() {
+  // ──────────────────────────────────────────────
+  //  State & Config
+  // ──────────────────────────────────────────────
+  const state = {
+    items: [],
+    sortChecked: false,
+    listName: '🛒 Shopping List'
+  };
+  const seenOps = new Set();
+  let isReady = false;
+  let hasChanges = false;
+  const selfAddr = (window.webxdc && window.webxdc.selfAddr) || 'local';
+
+  // ──────────────────────────────────────────────
+  //  Helpers
+  // ──────────────────────────────────────────────
+  function uid() {
+    return `${selfAddr}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function formatItemText(text) {
+    // Matches leading numbers with optional decimal (dot/comma) and directly attached units
+    const match = text.match(/^(\d+(?:[.,]\d+)?[a-zA-Z]*)/);
+    if (match && match[1].length > 0) {
+      return `<span class="item-amount">${escapeHtml(match[1])}</span>${escapeHtml(text.slice(match[1].length))}`;
+    }
+    return escapeHtml(text);
+  }
+
+  function applyOp(op) {
+    if (!op || seenOps.has(op.id)) return;
+    seenOps.add(op.id);
+
+    switch (op.type) {
+      case 'add': {
+        if (!state.items.find(i => i.id === op.item.id)) {
+          state.items.push({ ...op.item });
+        }
+        break;
+      }
+      case 'check': {
+        const it = state.items.find(i => i.id === op.itemId);
+        if (it) it.checked = op.checked;
+        break;
+      }
+      case 'delete': {
+        state.items = state.items.filter(i => i.id !== op.itemId);
+        break;
+      }
+      case 'edit': {
+        const it = state.items.find(i => i.id === op.itemId);
+        if (it) it.text = op.text;
+        break;
+      }
+      case 'reorder': {
+        const map = new Map(state.items.map(it => [it.id, it]));
+        const reordered = [];
+        for (const id of op.order) {
+          if (map.has(id)) reordered.push(map.get(id));
+        }
+        for (const it of state.items) {
+          if (!op.order.includes(it.id)) reordered.push(it);
+        }
+        state.items = reordered;
+        break;
+      }
+      case 'clear-checked': {
+        state.items = state.items.filter(i => !i.checked);
+        break;
+      }
+      case 'sort-toggle': {
+        state.sortChecked = op.value;
+        break;
+      }
+      case 'rename': {
+        state.listName = op.name;
+        const nameInput = document.getElementById('list-name-input');
+        if (nameInput) nameInput.value = op.name;
+        break;
+      }
+    }
+  }
+
+  function sendOp(op) {
+    hasChanges = true;
+    applyOp(op);
+    render();
+
+    const selfName = (window.webxdc && window.webxdc.selfName) || "User";
+    const listName = state.listName || 'Shopping List';
+    let infoMsg = `${selfName} updated '${listName}'`;
+
+    switch(op.type) {
+      case 'add': infoMsg = `${selfName} added an item to '${listName}'`; break;
+      case 'check': infoMsg = `${selfName} checked an item on '${listName}'`; break;
+      case 'delete': infoMsg = `${selfName} deleted an item from '${listName}'`; break;
+      case 'clear-checked': infoMsg = `${selfName} cleared checked items on '${listName}'`; break;
+      case 'rename': infoMsg = `${selfName} renamed '${listName}'`; break;
+      case 'edit': infoMsg = `${selfName} edited an item on '${listName}'`; break;
+      case 'reorder': infoMsg = `${selfName} reordered '${listName}'`; break;
+      case 'sort-toggle': infoMsg = `${selfName} toggled sort on '${listName}'`; break;
+    }
+
+    if (window.webxdc) {
+      window.webxdc.sendUpdate({
+        payload: op,
+        document: listName,
+        summary: `${state.items.filter(i=>!i.checked).length} items`,
+        info: infoMsg
+      }, "");
+    }
+  }
+
+  function getDisplayItems() {
+    if (!state.sortChecked) return [...state.items];
+    const unchecked = state.items.filter(i => !i.checked);
+    const checked = state.items.filter(i => i.checked);
+    return [...unchecked, ...checked];
+  }
+
+  function scrollToBottom() {
+    const container = document.querySelector('.list-container');
+    requestAnimationFrame(() => {
+      if (container) container.scrollTop = container.scrollHeight;
+    });
+  }
+
+  // ──────────────────────────────────────────────
+  //  Webxdc listener
+  // ──────────────────────────────────────────────
+  function setupWebxdc() {
+    if (!window.webxdc) {
+      hideLoading();
+      return;
+    }
+
+    window.webxdc.setUpdateListener((update) => {
+      try {
+        applyOp(update.payload);
+        if (isReady) render();
+        if (update.serial === update.max_serial) {
+          hideLoading();
+          isReady = true;
+          render();
+        }
+      } catch (e) {
+        console.error('Update listener error:', e);
+        hideLoading();
+      }
+    }, 0);
+
+    setTimeout(hideLoading, 800);
+  }
+
+  function hideLoading() {
+    const el = document.getElementById('loading');
+    if (el) el.style.display = 'none';
+  }
+
+  // Send info on close/background if changed
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden' && hasChanges) {
+      hasChanges = false;
+      try {
+        const selfName = (window.webxdc && window.webxdc.selfName) || 'A user';
+        const listName = state.listName || 'Shopping List';
+        window.webxdc.sendUpdate({
+          payload: null,
+          info: `${selfName} changed '${listName}'`
+        }, "");
+      } catch(e) {}
+    }
+  });
+
+  // ──────────────────────────────────────────────
+  //  Render
+  // ──────────────────────────────────────────────
+  function render() {
+    const list = document.getElementById('item-list');
+    const sortBtn = document.getElementById('sort-toggle-btn');
+    const display = getDisplayItems();
+
+    if (sortBtn) sortBtn.classList.toggle('active', state.sortChecked);
+
+    if (display.length === 0) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+            <rect x="9" y="3" width="6" height="4" rx="1"/>
+          </svg>
+          <div>Your list is empty</div>
+          <div style="font-size:13px;margin-top:4px;opacity:.7">Add items above to get started</div>
+        </div>`;
+      return;
+    }
+
+    let dividerIdx = -1;
+    if (state.sortChecked) {
+      const uncheckedCount = display.filter(i => !i.checked).length;
+      if (uncheckedCount > 0 && uncheckedCount < display.length) {
+        dividerIdx = uncheckedCount;
+      }
+    }
+
+    list.innerHTML = '';
+    display.forEach((item, idx) => {
+      if (idx === dividerIdx) {
+        const div = document.createElement('div');
+        div.className = 'section-divider';
+        div.textContent = 'Checked';
+        list.appendChild(div);
+      }
+
+      const el = document.createElement('div');
+      el.className = 'item' + (item.checked ? ' checked' : '');
+      el.dataset.id = item.id;
+
+      el.innerHTML = `
+        <div class="drag-handle" title="Drag to reorder">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <circle cx="9" cy="6" r="1.2" fill="currentColor" stroke="none"/>
+            <circle cx="9" cy="12" r="1.2" fill="currentColor" stroke="none"/>
+            <circle cx="9" cy="18" r="1.2" fill="currentColor" stroke="none"/>
+            <circle cx="15" cy="6" r="1.2" fill="currentColor" stroke="none"/>
+            <circle cx="15" cy="12" r="1.2" fill="currentColor" stroke="none"/>
+            <circle cx="15" cy="18" r="1.2" fill="currentColor" stroke="none"/>
+          </svg>
+        </div>
+        <div class="checkbox" data-check="${item.id}">
+          ${item.checked ? `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 6 5 9 10 3"/></svg>` : ''}
+        </div>
+        <div class="item-text" data-text="${item.id}">${formatItemText(item.text)}</div>
+        <button class="delete-btn" data-del="${item.id}" title="Delete">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      `;
+      list.appendChild(el);
+    });
+
+    list.querySelectorAll('[data-check]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const item = state.items.find(i => i.id === el.dataset.check);
+        if (item) sendOp({ id: uid(), type: 'check', itemId: item.id, checked: !item.checked });
+      });
+    });
+
+    list.querySelectorAll('[data-del]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        sendOp({ id: uid(), type: 'delete', itemId: el.dataset.del });
+      });
+    });
+
+    list.querySelectorAll('[data-text]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        startEdit(el, el.dataset.text);
+      });
+    });
+
+    initDragDrop();
+  }
+
+  function startEdit(textEl, itemId) {
+    const item = state.items.find(i => i.id === itemId);
+    if (!item) return;
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = item.text;
+    input.maxLength = 200;
+    input.className = 'edit-input';
+    textEl.replaceWith(input);
+    input.focus();
+    input.select();
+
+    const save = () => {
+      const newText = input.value.trim();
+      if (newText && newText !== item.text) {
+        sendOp({ id: uid(), type: 'edit', itemId, text: newText });
+      } else {
+        render();
+      }
+    };
+    input.addEventListener('blur', save);
+    input.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+      if (ev.key === 'Escape') { ev.preventDefault(); render(); }
+    });
+  }
+
+  // ──────────────────────────────────────────────
+  //  Drag & Drop
+  // ──────────────────────────────────────────────
+  function initDragDrop() {
+    const list = document.getElementById('item-list');
+    let dragEl = null, ghost = null, offsetY = 0;
+    let dragSourceId = null;
+
+    list.querySelectorAll('.drag-handle').forEach(handle => {
+      handle.addEventListener('pointerdown', startDrag);
+    });
+
+    function startDrag(e) {
+      e.preventDefault();
+      const item = e.currentTarget.closest('.item');
+      if (!item) return;
+
+      dragSourceId = item.dataset.id;
+      dragEl = item;
+      const rect = item.getBoundingClientRect();
+      offsetY = e.clientY - rect.top;
+
+      ghost = item.cloneNode(true);
+      ghost.classList.add('ghost');
+      ghost.style.width = rect.width + 'px';
+      ghost.style.top = (e.clientY - offsetY) + 'px';
+      ghost.style.left = rect.left + 'px';
+      document.body.appendChild(ghost);
+
+      item.classList.add('dragging');
+
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', onUp);
+      e.currentTarget.setPointerCapture && e.currentTarget.setPointerCapture(e.pointerId);
+    }
+
+    function onMove(e) {
+      if (!ghost) return;
+      ghost.style.top = (e.clientY - offsetY) + 'px';
+
+      const els = [...list.querySelectorAll('.item:not(.dragging)')];
+      let target = null;
+      for (const el of els) {
+        const r = el.getBoundingClientRect();
+        if (e.clientY >= r.top && e.clientY <= r.bottom) { target = el; break; }
+      }
+      list.querySelectorAll('.item').forEach(el => el.classList.remove('drag-over'));
+      if (target) target.classList.add('drag-over');
+    }
+
+    function onUp(e) {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      if (ghost) { ghost.remove(); ghost = null; }
+
+      const target = list.querySelector('.item.drag-over');
+      list.querySelectorAll('.item').forEach(el => {
+        el.classList.remove('dragging', 'drag-over');
+      });
+
+      if (target && target.dataset.id !== dragSourceId) {
+        const display = getDisplayItems();
+        const fromIdx = display.findIndex(i => i.id === dragSourceId);
+        const toIdx = display.findIndex(i => i.id === target.dataset.id);
+        if (fromIdx !== -1 && toIdx !== -1) {
+          const newOrder = [...display];
+          const [moved] = newOrder.splice(fromIdx, 1);
+          newOrder.splice(toIdx, 0, moved);
+          const newIds = newOrder.map(i => i.id);
+          sendOp({ id: uid(), type: 'reorder', order: newIds });
+        }
+      }
+
+      dragEl = null;
+      dragSourceId = null;
+    }
+  }
+
+  // ──────────────────────────────────────────────
+  //  Controls
+  // ──────────────────────────────────────────────
+  document.getElementById('add-btn').addEventListener('click', addItem);
+  document.getElementById('new-item-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addItem();
+  });
+
+  function addItem() {
+    const input = document.getElementById('new-item-input');
+    const text = input.value.trim();
+    if (!text) { input.focus(); return; }
+    sendOp({
+      id: uid(),
+      type: 'add',
+      item: { id: uid(), text, checked: false }
+    });
+    input.value = '';
+    input.focus();
+    scrollToBottom();
+  }
+
+  document.getElementById('sort-toggle-btn').addEventListener('click', () => {
+    sendOp({ id: uid(), type: 'sort-toggle', value: !state.sortChecked });
+  });
+
+  document.getElementById('clear-checked-btn').addEventListener('click', () => {
+    const count = state.items.filter(i => i.checked).length;
+    if (count === 0) { showToast('No checked items to remove'); return; }
+    sendOp({ id: uid(), type: 'clear-checked' });
+    showToast(`Removed ${count} item${count === 1 ? '' : 's'}`);
+  });
+
+  document.getElementById('list-name-input').addEventListener('change', (e) => {
+    const newName = e.target.value.trim() || '🛒 Shopping List';
+    e.target.value = newName;
+    sendOp({ id: uid(), type: 'rename', name: newName });
+  });
+
+  // ──────────────────────────────────────────────
+  //  Toast
+  // ──────────────────────────────────────────────
+  let toastTimer;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  // ──────────────────────────────────────────────
+  //  Init
+  // ──────────────────────────────────────────────
+  window.onerror = function() {
+    hideLoading();
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      setupWebxdc();
+      render();
+    });
+  } else {
+    setupWebxdc();
+    render();
+  }
+})();
+</script>
+</body>
+</html>
+
