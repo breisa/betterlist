@@ -163,27 +163,29 @@
     .list-container {
       flex: 1;
       overflow-y: auto;
+      position: relative;
       -webkit-overflow-scrolling: touch;
       touch-action: pan-y;
       overscroll-behavior: contain;
       padding: 12px 12px 24px;
       scroll-behavior: smooth;
-      display: flex;
-      flex-direction: column;
     }
 
     #item-list {
       display: flex;
       flex-direction: column;
       gap: 6px;
+      min-height: 100%;
     }
 
     .empty-state {
       text-align: center;
       color: var(--text-muted);
-      padding: 48px 24px;
+      padding: 24px;
       font-size: 15px;
-      flex: 1;
+      position: absolute;
+      top: 50%; left: 0; right: 0;
+      transform: translateY(-50%);
       display: flex;
       flex-direction: column;
       align-items: center;
