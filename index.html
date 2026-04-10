@@ -510,7 +510,6 @@
   };
   const seenOps = new Set();
   let isReady = false;
-  let hasChanges = false;
   const selfAddr = (window.webxdc && window.webxdc.selfAddr) || 'local';
 
   // ──────────────────────────────────────────────
@@ -521,7 +520,7 @@
   }
 
   function escapeHtml(s) {
-    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
 
   function formatItemText(text) {
@@ -584,6 +583,11 @@
   function applyOp(op) {
     if (!op || seenOps.has(op.id)) return;
     seenOps.add(op.id);
+    // Evict oldest entries to keep memory bounded (keep last 2000 op IDs)
+    if (seenOps.size > 2000) {
+      const oldest = seenOps.values().next().value;
+      seenOps.delete(oldest);
+    }
 
     switch (op.type) {
       case 'add': {
@@ -628,7 +632,6 @@
   }
 
   function sendOp(op) {
-    hasChanges = true;
     applyOp(op);
     render();
 
@@ -694,24 +697,17 @@
     }, 0);
 
     // Fallback: if no updates arrive (empty list), still mark ready and show UI
-    setTimeout(() => { isReady = true; hideLoading(); render(); }, 800);
+    setTimeout(() => { if (!isReady) { isReady = true; hideLoading(); render(); } }, 800);
   }
 
   function hideLoading() {
     const el = document.getElementById('loading');
-    if (el) el.style.display = 'none';
+    if (!el || el.style.display === 'none') return;
+    el.style.opacity = '0';
+    setTimeout(() => { el.style.display = 'none'; }, 300);
   }
 
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden' && hasChanges) {
-      hasChanges = false;
-      try {
-        const selfName = (window.webxdc && window.webxdc.selfName) || 'A user';
-        const listName = state.listName || 'Shopping List';
-        window.webxdc.sendUpdate({ payload: null, info: LANGS[lang].info_changed(selfName, listName) }, "");
-      } catch(e) {}
-    }
-  });
+
 
   // ──────────────────────────────────────────────
   //  Render
@@ -1013,7 +1009,7 @@
   // ──────────────────────────────────────────────
   //  Init
   // ──────────────────────────────────────────────
-  window.onerror = () => hideLoading();
+  window.addEventListener('error', () => hideLoading());
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => { setupWebxdc(); render(); });
