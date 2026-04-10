@@ -19,7 +19,6 @@
       --accent: #339af0;
       --accent-hover: #228be6;
       --danger: #fa5252;
-      --danger-hover: #f03e3e;
       --check-bg: #339af0;
       --amount-color: #8a919b;
       --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
@@ -40,7 +39,6 @@
         --accent: #4dabf7;
         --accent-hover: #74c0fc;
         --danger: #ff6b6b;
-        --danger-hover: #ff8787;
         --check-bg: #4dabf7;
         --amount-color: #7a8089;
         --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
@@ -359,6 +357,33 @@
       animation: spin 0.7s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Menu ── */
+    .menu-wrap { position: relative; flex-shrink: 0; }
+    .dropdown {
+      position: absolute;
+      right: 0; top: calc(100% + 4px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-drag);
+      z-index: 200;
+      min-width: 185px;
+      overflow: hidden;
+      display: none;
+    }
+    .dropdown.open { display: block; }
+    .menu-item {
+      display: block; width: 100%;
+      background: none; border: none;
+      padding: 11px 16px;
+      text-align: left; cursor: pointer;
+      font-size: 14px; color: var(--text);
+      transition: background var(--transition);
+    }
+    .menu-item:hover { background: var(--surface2); }
+    .menu-item.danger { color: var(--danger); }
+    .menu-divider { height: 1px; background: var(--border); margin: 2px 0; }
   </style>
 </head>
 <body>
@@ -377,17 +402,28 @@
   <button class="header-btn danger" id="clear-checked-btn" title="Remove all checked items">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-      <path d="M10 11v6"/><path d="M14 11v6"/>
-      <path d="M9 6V4h6v2"/>
+      <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
     </svg>
   </button>
+  <div class="menu-wrap">
+    <button class="header-btn" id="menu-btn" title="Menu">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+      </svg>
+    </button>
+    <div class="dropdown" id="dropdown">
+      <button class="menu-item danger" id="clear-all-btn">Clear all items</button>
+      <div class="menu-divider"></div>
+      <button class="menu-item" id="lang-btn">Deutsch</button>
+    </div>
+  </div>
 </header>
 
 <div class="add-bar">
   <input type="text" id="new-item-input" placeholder="Add an item…" autocomplete="off" maxlength="200">
   <button class="add-btn" id="add-btn">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    Add
+    <span id="add-btn-text">Add</span>
   </button>
 </div>
 
@@ -400,12 +436,57 @@
 <script>
 (function() {
   // ──────────────────────────────────────────────
+  //  Localization
+  // ──────────────────────────────────────────────
+  const LANGS = {
+    en: {
+      defaultListName: '🛒 Shopping List',
+      addPlaceholder: 'Add an item…',
+      addBtn: 'Add',
+      sortTitle: 'Move checked to bottom',
+      clearCheckedTitle: 'Remove all checked items',
+      menuTitle: 'Menu',
+      emptyTitle: 'Your list is empty',
+      emptyHint: 'Add items above to get started',
+      checkedSection: 'Checked',
+      dragHandle: 'Drag to reorder',
+      deleteItem: 'Delete',
+      noChecked: 'No checked items to remove',
+      removed: n => `Removed ${n} item${n === 1 ? '' : 's'}`,
+      cleared: 'Cleared all items',
+      clearAll: 'Clear all items',
+      switchLang: 'Deutsch',
+    },
+    de: {
+      defaultListName: '🛒 Einkaufsliste',
+      addPlaceholder: 'Element hinzufügen…',
+      addBtn: 'Hinzufügen',
+      sortTitle: 'Erledigte nach unten sortieren',
+      clearCheckedTitle: 'Abgehakte Elemente entfernen',
+      menuTitle: 'Menü',
+      emptyTitle: 'Deine Liste ist leer',
+      emptyHint: 'Füge oben Elemente hinzu',
+      checkedSection: 'Erledigt',
+      dragHandle: 'Zum Neuanordnen ziehen',
+      deleteItem: 'Löschen',
+      noChecked: 'Keine abgehakten Elemente',
+      removed: n => `${n} Element${n === 1 ? '' : 'e'} entfernt`,
+      cleared: 'Alle Elemente gelöscht',
+      clearAll: 'Alle Elemente löschen',
+      switchLang: 'English',
+    }
+  };
+
+  let lang = localStorage.getItem('lang') || 'en';
+  function t(key) { return LANGS[lang][key]; }
+
+  // ──────────────────────────────────────────────
   //  State & Config
   // ──────────────────────────────────────────────
   const state = {
     items: [],
     sortChecked: false,
-    listName: '🛒 Shopping List'
+    listName: t('defaultListName')
   };
   const seenOps = new Set();
   let isReady = false;
@@ -424,7 +505,6 @@
   }
 
   function formatItemText(text) {
-    // Matches leading numbers with optional decimal (dot/comma) and directly attached units
     const match = text.match(/^(\d+(?:[.,]\d+)?[a-zA-Z]*)/);
     if (match && match[1].length > 0) {
       return `<span class="item-amount">${escapeHtml(match[1])}</span>${escapeHtml(text.slice(match[1].length))}`;
@@ -459,30 +539,17 @@
       }
       case 'reorder': {
         const map = new Map(state.items.map(it => [it.id, it]));
-        const reordered = [];
-        for (const id of op.order) {
-          if (map.has(id)) reordered.push(map.get(id));
-        }
+        const reordered = op.order.filter(id => map.has(id)).map(id => map.get(id));
         for (const it of state.items) {
           if (!op.order.includes(it.id)) reordered.push(it);
         }
         state.items = reordered;
         break;
       }
-      case 'clear-checked': {
-        state.items = state.items.filter(i => !i.checked);
-        break;
-      }
-      case 'sort-toggle': {
-        state.sortChecked = op.value;
-        break;
-      }
-      case 'rename': {
-        state.listName = op.name;
-        const nameInput = document.getElementById('list-name-input');
-        if (nameInput) nameInput.value = op.name;
-        break;
-      }
+      case 'clear-checked': state.items = state.items.filter(i => !i.checked); break;
+      case 'clear-all':     state.items = []; break;
+      case 'sort-toggle':   state.sortChecked = op.value; break;
+      case 'rename':        state.listName = op.name; break;
     }
   }
 
@@ -491,26 +558,26 @@
     applyOp(op);
     render();
 
-    const selfName = (window.webxdc && window.webxdc.selfName) || "User";
+    const selfName = (window.webxdc && window.webxdc.selfName) || 'User';
     const listName = state.listName || 'Shopping List';
     let infoMsg = `${selfName} updated '${listName}'`;
-
-    switch(op.type) {
-      case 'add': infoMsg = `${selfName} added an item to '${listName}'`; break;
-      case 'check': infoMsg = `${selfName} checked an item on '${listName}'`; break;
-      case 'delete': infoMsg = `${selfName} deleted an item from '${listName}'`; break;
+    switch (op.type) {
+      case 'add':           infoMsg = `${selfName} added an item to '${listName}'`; break;
+      case 'check':         infoMsg = `${selfName} checked an item on '${listName}'`; break;
+      case 'delete':        infoMsg = `${selfName} deleted an item from '${listName}'`; break;
       case 'clear-checked': infoMsg = `${selfName} cleared checked items on '${listName}'`; break;
-      case 'rename': infoMsg = `${selfName} renamed '${listName}'`; break;
-      case 'edit': infoMsg = `${selfName} edited an item on '${listName}'`; break;
-      case 'reorder': infoMsg = `${selfName} reordered '${listName}'`; break;
-      case 'sort-toggle': infoMsg = `${selfName} toggled sort on '${listName}'`; break;
+      case 'clear-all':     infoMsg = `${selfName} cleared all items on '${listName}'`; break;
+      case 'rename':        infoMsg = `${selfName} renamed the list to '${listName}'`; break;
+      case 'edit':          infoMsg = `${selfName} edited an item on '${listName}'`; break;
+      case 'reorder':       infoMsg = `${selfName} reordered '${listName}'`; break;
+      case 'sort-toggle':   infoMsg = `${selfName} toggled sort on '${listName}'`; break;
     }
 
     if (window.webxdc) {
       window.webxdc.sendUpdate({
         payload: op,
         document: listName,
-        summary: `${state.items.filter(i=>!i.checked).length} items`,
+        summary: `${state.items.filter(i => !i.checked).length} items`,
         info: infoMsg
       }, "");
     }
@@ -518,34 +585,30 @@
 
   function getDisplayItems() {
     if (!state.sortChecked) return [...state.items];
-    const unchecked = state.items.filter(i => !i.checked);
-    const checked = state.items.filter(i => i.checked);
-    return [...unchecked, ...checked];
+    return [
+      ...state.items.filter(i => !i.checked),
+      ...state.items.filter(i => i.checked)
+    ];
   }
 
   function scrollToBottom() {
     const container = document.querySelector('.list-container');
-    requestAnimationFrame(() => {
-      if (container) container.scrollTop = container.scrollHeight;
-    });
+    requestAnimationFrame(() => { if (container) container.scrollTop = container.scrollHeight; });
   }
 
   // ──────────────────────────────────────────────
   //  Webxdc listener
   // ──────────────────────────────────────────────
   function setupWebxdc() {
-    if (!window.webxdc) {
-      hideLoading();
-      return;
-    }
+    if (!window.webxdc) { hideLoading(); return; }
 
     window.webxdc.setUpdateListener((update) => {
       try {
         applyOp(update.payload);
         if (isReady) render();
         if (update.serial === update.max_serial) {
-          hideLoading();
           isReady = true;
+          hideLoading();
           render();
         }
       } catch (e) {
@@ -554,7 +617,8 @@
       }
     }, 0);
 
-    setTimeout(hideLoading, 800);
+    // Fallback: if no updates arrive (empty list), still mark ready and show UI
+    setTimeout(() => { isReady = true; hideLoading(); render(); }, 800);
   }
 
   function hideLoading() {
@@ -562,17 +626,13 @@
     if (el) el.style.display = 'none';
   }
 
-  // Send info on close/background if changed
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden' && hasChanges) {
       hasChanges = false;
       try {
         const selfName = (window.webxdc && window.webxdc.selfName) || 'A user';
         const listName = state.listName || 'Shopping List';
-        window.webxdc.sendUpdate({
-          payload: null,
-          info: `${selfName} changed '${listName}'`
-        }, "");
+        window.webxdc.sendUpdate({ payload: null, info: `${selfName} changed '${listName}'` }, "");
       } catch(e) {}
     }
   });
@@ -580,10 +640,29 @@
   // ──────────────────────────────────────────────
   //  Render
   // ──────────────────────────────────────────────
+  function renderTexts() {
+    document.documentElement.lang = lang;
+    document.getElementById('new-item-input').placeholder = t('addPlaceholder');
+    document.getElementById('add-btn-text').textContent = t('addBtn');
+    document.getElementById('sort-toggle-btn').title = t('sortTitle');
+    document.getElementById('clear-checked-btn').title = t('clearCheckedTitle');
+    document.getElementById('menu-btn').title = t('menuTitle');
+    document.getElementById('clear-all-btn').textContent = t('clearAll');
+    document.getElementById('lang-btn').textContent = t('switchLang');
+  }
+
   function render() {
+    renderTexts();
+
     const list = document.getElementById('item-list');
     const sortBtn = document.getElementById('sort-toggle-btn');
     const display = getDisplayItems();
+
+    // Update list name unless the user is currently editing it
+    const nameInput = document.getElementById('list-name-input');
+    if (nameInput && document.activeElement !== nameInput) {
+      nameInput.value = state.listName;
+    }
 
     if (sortBtn) sortBtn.classList.toggle('active', state.sortChecked);
 
@@ -594,8 +673,8 @@
             <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
             <rect x="9" y="3" width="6" height="4" rx="1"/>
           </svg>
-          <div>Your list is empty</div>
-          <div style="font-size:13px;margin-top:4px;opacity:.7">Add items above to get started</div>
+          <div>${escapeHtml(t('emptyTitle'))}</div>
+          <div style="font-size:13px;margin-top:4px;opacity:.7">${escapeHtml(t('emptyHint'))}</div>
         </div>`;
       return;
     }
@@ -603,9 +682,7 @@
     let dividerIdx = -1;
     if (state.sortChecked) {
       const uncheckedCount = display.filter(i => !i.checked).length;
-      if (uncheckedCount > 0 && uncheckedCount < display.length) {
-        dividerIdx = uncheckedCount;
-      }
+      if (uncheckedCount > 0 && uncheckedCount < display.length) dividerIdx = uncheckedCount;
     }
 
     list.innerHTML = '';
@@ -613,16 +690,15 @@
       if (idx === dividerIdx) {
         const div = document.createElement('div');
         div.className = 'section-divider';
-        div.textContent = 'Checked';
+        div.textContent = t('checkedSection');
         list.appendChild(div);
       }
 
       const el = document.createElement('div');
       el.className = 'item' + (item.checked ? ' checked' : '');
       el.dataset.id = item.id;
-
       el.innerHTML = `
-        <div class="drag-handle" title="Drag to reorder">
+        <div class="drag-handle" title="${escapeHtml(t('dragHandle'))}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
             <circle cx="9" cy="6" r="1.2" fill="currentColor" stroke="none"/>
             <circle cx="9" cy="12" r="1.2" fill="currentColor" stroke="none"/>
@@ -636,10 +712,9 @@
           ${item.checked ? `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 6 5 9 10 3"/></svg>` : ''}
         </div>
         <div class="item-text" data-text="${item.id}">${formatItemText(item.text)}</div>
-        <button class="delete-btn" data-del="${item.id}" title="Delete">
+        <button class="delete-btn" data-del="${item.id}" title="${escapeHtml(t('deleteItem'))}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      `;
+        </button>`;
       list.appendChild(el);
     });
 
@@ -701,8 +776,7 @@
   // ──────────────────────────────────────────────
   function initDragDrop() {
     const list = document.getElementById('item-list');
-    let dragEl = null, ghost = null, offsetY = 0;
-    let dragSourceId = null;
+    let ghost = null, offsetY = 0, dragSourceId = null;
 
     list.querySelectorAll('.drag-handle').forEach(handle => {
       handle.addEventListener('pointerdown', startDrag);
@@ -714,7 +788,6 @@
       if (!item) return;
 
       dragSourceId = item.dataset.id;
-      dragEl = item;
       const rect = item.getBoundingClientRect();
       offsetY = e.clientY - rect.top;
 
@@ -724,7 +797,6 @@
       ghost.style.top = (e.clientY - offsetY) + 'px';
       ghost.style.left = rect.left + 'px';
       document.body.appendChild(ghost);
-
       item.classList.add('dragging');
 
       document.addEventListener('pointermove', onMove);
@@ -736,9 +808,8 @@
       if (!ghost) return;
       ghost.style.top = (e.clientY - offsetY) + 'px';
 
-      const els = [...list.querySelectorAll('.item:not(.dragging)')];
       let target = null;
-      for (const el of els) {
+      for (const el of list.querySelectorAll('.item:not(.dragging)')) {
         const r = el.getBoundingClientRect();
         if (e.clientY >= r.top && e.clientY <= r.bottom) { target = el; break; }
       }
@@ -746,15 +817,13 @@
       if (target) target.classList.add('drag-over');
     }
 
-    function onUp(e) {
+    function onUp() {
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);
       if (ghost) { ghost.remove(); ghost = null; }
 
       const target = list.querySelector('.item.drag-over');
-      list.querySelectorAll('.item').forEach(el => {
-        el.classList.remove('dragging', 'drag-over');
-      });
+      list.querySelectorAll('.item').forEach(el => el.classList.remove('dragging', 'drag-over'));
 
       if (target && target.dataset.id !== dragSourceId) {
         const display = getDisplayItems();
@@ -764,12 +833,9 @@
           const newOrder = [...display];
           const [moved] = newOrder.splice(fromIdx, 1);
           newOrder.splice(toIdx, 0, moved);
-          const newIds = newOrder.map(i => i.id);
-          sendOp({ id: uid(), type: 'reorder', order: newIds });
+          sendOp({ id: uid(), type: 'reorder', order: newOrder.map(i => i.id) });
         }
       }
-
-      dragEl = null;
       dragSourceId = null;
     }
   }
@@ -786,11 +852,7 @@
     const input = document.getElementById('new-item-input');
     const text = input.value.trim();
     if (!text) { input.focus(); return; }
-    sendOp({
-      id: uid(),
-      type: 'add',
-      item: { id: uid(), text, checked: false }
-    });
+    sendOp({ id: uid(), type: 'add', item: { id: uid(), text, checked: false } });
     input.value = '';
     input.focus();
     scrollToBottom();
@@ -802,15 +864,38 @@
 
   document.getElementById('clear-checked-btn').addEventListener('click', () => {
     const count = state.items.filter(i => i.checked).length;
-    if (count === 0) { showToast('No checked items to remove'); return; }
+    if (count === 0) { showToast(t('noChecked')); return; }
     sendOp({ id: uid(), type: 'clear-checked' });
-    showToast(`Removed ${count} item${count === 1 ? '' : 's'}`);
+    showToast(LANGS[lang].removed(count));
   });
 
   document.getElementById('list-name-input').addEventListener('change', (e) => {
-    const newName = e.target.value.trim() || '🛒 Shopping List';
+    const newName = e.target.value.trim() || t('defaultListName');
     e.target.value = newName;
     sendOp({ id: uid(), type: 'rename', name: newName });
+  });
+
+  // ── Menu ──
+  const dropdown = document.getElementById('dropdown');
+
+  document.getElementById('menu-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle('open');
+  });
+  document.addEventListener('click', () => dropdown.classList.remove('open'));
+
+  document.getElementById('clear-all-btn').addEventListener('click', () => {
+    dropdown.classList.remove('open');
+    if (state.items.length === 0) return;
+    sendOp({ id: uid(), type: 'clear-all' });
+    showToast(t('cleared'));
+  });
+
+  document.getElementById('lang-btn').addEventListener('click', () => {
+    dropdown.classList.remove('open');
+    lang = lang === 'en' ? 'de' : 'en';
+    localStorage.setItem('lang', lang);
+    render();
   });
 
   // ──────────────────────────────────────────────
@@ -818,25 +903,20 @@
   // ──────────────────────────────────────────────
   let toastTimer;
   function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
+    const toastEl = document.getElementById('toast');
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2200);
   }
 
   // ──────────────────────────────────────────────
   //  Init
   // ──────────────────────────────────────────────
-  window.onerror = function() {
-    hideLoading();
-  };
+  window.onerror = () => hideLoading();
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      setupWebxdc();
-      render();
-    });
+    document.addEventListener('DOMContentLoaded', () => { setupWebxdc(); render(); });
   } else {
     setupWebxdc();
     render();
@@ -845,4 +925,3 @@
 </script>
 </body>
 </html>
-
