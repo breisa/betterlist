@@ -522,13 +522,24 @@
   // ──────────────────────────────────────────────
   //  State & Config
   // ──────────────────────────────────────────────
-  let lang = localStorage.getItem('lang') || 'en';
+  function detectLang() {
+    const stored = localStorage.getItem('lang');
+    if (stored && LANGS[stored]) return stored;
+    const navLangs = navigator.languages && navigator.languages.length
+      ? navigator.languages
+      : [navigator.language || 'en'];
+    for (const l of navLangs) {
+      const primary = l.split('-')[0].toLowerCase();
+      if (LANGS[primary]) return primary;
+    }
+    return 'en';
+  }
+  let lang = detectLang();
   function t(key) { return LANGS[lang][key]; }
 
   const state = {
     items: [],
     sortChecked: false,
-    lang: lang,
     listName: t('defaultListName')
   };
   const seenOps = new Set();
@@ -646,11 +657,6 @@
       case 'clear-checked': state.items = state.items.filter(i => !i.checked); break;
       case 'clear-all':     state.items = []; break;
       case 'sort-toggle':   state.sortChecked = op.value; break;
-      case 'set-lang':
-        state.lang = op.lang;
-        lang = op.lang;
-        localStorage.setItem('lang', lang);
-        break;
       case 'rename':        state.listName = op.name; break;
     }
   }
@@ -673,7 +679,6 @@
       case 'edit':          infoMsg = L.info_edit(selfName, listName); break;
       case 'reorder':       infoMsg = L.info_reorder(selfName, listName); break;
       case 'sort-toggle':   infoMsg = L.info_sortToggle(selfName, listName); break;
-      case 'set-lang':      infoMsg = L.info_changed(selfName, listName); break;
     }
 
     if (window.webxdc) {
@@ -1018,8 +1023,8 @@
       btn.addEventListener('click', () => {
         lang = code;
         localStorage.setItem('lang', lang);
-        sendOp({ id: uid(), type: 'set-lang', lang: code });
         langModal.style.display = 'none';
+        render();
       });
       opts.appendChild(btn);
     }

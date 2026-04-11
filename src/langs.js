@@ -31,7 +31,6 @@ const LANGS = {
     info_edit:        (n, l) => `${n} edited an item on '${l}'`,
     info_reorder:     (n, l) => `${n} reordered '${l}'`,
     info_sortToggle:  (n, l) => `${n} toggled sort on '${l}'`,
-    info_changed:     (n, l) => `${n} changed '${l}'`,
   },
   de: {
     nativeName: 'Deutsch',
@@ -62,7 +61,6 @@ const LANGS = {
     info_edit:        (n, l) => `${n} hat ein Element in '${l}' bearbeitet`,
     info_reorder:     (n, l) => `${n} hat '${l}' neu angeordnet`,
     info_sortToggle:  (n, l) => `${n} hat die Sortierung in '${l}' umgeschaltet`,
-    info_changed:     (n, l) => `${n} hat '${l}' geändert`,
   },
   zh: {
     nativeName: '中文',
@@ -93,7 +91,6 @@ const LANGS = {
     info_edit:        (n, l) => `${n} 编辑了 '${l}' 中的一个项目`,
     info_reorder:     (n, l) => `${n} 重新排序了 '${l}'`,
     info_sortToggle:  (n, l) => `${n} 切换了 '${l}' 的排序`,
-    info_changed:     (n, l) => `${n} 更改了 '${l}'`,
   },
   hi: {
     nativeName: 'हिन्दी',
@@ -124,7 +121,6 @@ const LANGS = {
     info_edit:        (n, l) => `${n} ने '${l}' पर एक आइटम संपादित किया`,
     info_reorder:     (n, l) => `${n} ने '${l}' को पुनः क्रमित किया`,
     info_sortToggle:  (n, l) => `${n} ने '${l}' पर सॉर्टिंग टॉगल की`,
-    info_changed:     (n, l) => `${n} ने '${l}' को बदला`,
   },
   es: {
     nativeName: 'Español',
@@ -155,7 +151,6 @@ const LANGS = {
     info_edit:        (n, l) => `${n} editó un elemento en '${l}'`,
     info_reorder:     (n, l) => `${n} reordenó '${l}'`,
     info_sortToggle:  (n, l) => `${n} alternó el orden en '${l}'`,
-    info_changed:     (n, l) => `${n} cambió '${l}'`,
   },
   pt: {
     nativeName: 'Português',
@@ -186,7 +181,6 @@ const LANGS = {
     info_edit:        (n, l) => `${n} editou um item em '${l}'`,
     info_reorder:     (n, l) => `${n} reordenou '${l}'`,
     info_sortToggle:  (n, l) => `${n} alternou a classificação em '${l}'`,
-    info_changed:     (n, l) => `${n} alterou '${l}'`,
   },
   fr: {
     nativeName: 'Français',
@@ -217,7 +211,6 @@ const LANGS = {
     info_edit:        (n, l) => `${n} a modifié un article sur '${l}'`,
     info_reorder:     (n, l) => `${n} a réorganisé '${l}'`,
     info_sortToggle:  (n, l) => `${n} a basculé le tri sur '${l}'`,
-    info_changed:     (n, l) => `${n} a modifié '${l}'`,
   },
   it: {
     nativeName: 'Italiano',
@@ -248,7 +241,6 @@ const LANGS = {
     info_edit:        (n, l) => `${n} ha modificato un elemento su '${l}'`,
     info_reorder:     (n, l) => `${n} ha riordinato '${l}'`,
     info_sortToggle:  (n, l) => `${n} ha attivato/disattivato l'ordinamento su '${l}'`,
-    info_changed:     (n, l) => `${n} ha modificato '${l}'`,
   },
   ru: {
     nativeName: 'Русский',
@@ -279,7 +271,6 @@ const LANGS = {
     info_edit:        (n, l) => `${n} отредактировал(а) элемент в '${l}'`,
     info_reorder:     (n, l) => `${n} изменил(а) порядок в '${l}'`,
     info_sortToggle:  (n, l) => `${n} переключил(а) сортировку в '${l}'`,
-    info_changed:     (n, l) => `${n} изменил(а) '${l}'`,
   },
   pl: {
     nativeName: 'Polski',
@@ -310,7 +301,6 @@ const LANGS = {
     info_edit:        (n, l) => `${n} edytował(a) element na '${l}'`,
     info_reorder:     (n, l) => `${n} zmienił(a) kolejność na '${l}'`,
     info_sortToggle:  (n, l) => `${n} przełączył(a) sortowanie na '${l}'`,
-    info_changed:     (n, l) => `${n} zmienił(a) '${l}'`,
   },
   nl: {
     nativeName: 'Nederlands',
@@ -341,6 +331,5 @@ const LANGS = {
     info_edit:        (n, l) => `${n} heeft een item bewerkt op '${l}'`,
     info_reorder:     (n, l) => `${n} heeft '${l}' opnieuw gerangschikt`,
     info_sortToggle:  (n, l) => `${n} heeft sortering ingeschakeld op '${l}'`,
-    info_changed:     (n, l) => `${n} heeft '${l}' gewijzigd`,
   }
 };
