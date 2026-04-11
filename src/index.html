@@ -427,6 +427,20 @@
     .lang-option:hover { background: var(--surface2); }
     .lang-option .lang-check { color: var(--accent); font-weight: 700; }
 
+    /* ── About sheet ── */
+    .about-body {
+      padding: 4px 20px 8px;
+      font-size: 15px;
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .about-body a {
+      color: var(--accent);
+      text-decoration: none;
+      word-break: break-all;
+    }
+    .about-body a:hover { text-decoration: underline; }
+
     /* ── Confetti Canvas ── */
     #confetti-canvas {
       position: fixed;
@@ -468,6 +482,8 @@
       <button class="menu-item danger" id="clear-all-btn">Clear all items</button>
       <div class="menu-divider"></div>
       <button class="menu-item" id="lang-btn">Language</button>
+      <div class="menu-divider"></div>
+      <button class="menu-item" id="about-btn">About</button>
     </div>
   </div>
 </header>
@@ -488,6 +504,13 @@
   <div class="modal-sheet">
     <div class="modal-title" id="lang-modal-title">Language</div>
     <div id="lang-options"></div>
+  </div>
+</div>
+
+<div id="about-modal" class="modal-overlay" style="display:none">
+  <div class="modal-sheet">
+    <div class="modal-title">About</div>
+    <p class="about-body">Hey there! If you spot a bug or have an idea, please submit it at <a href="https://github.com/breisa/betterlist" target="_blank" rel="noopener">https://github.com/breisa/betterlist</a>.</p>
   </div>
 </div>
 
@@ -721,6 +744,7 @@
     document.getElementById('menu-btn').title = t('menuTitle');
     document.getElementById('clear-all-btn').textContent = t('clearAll');
     document.getElementById('lang-btn').textContent = t('langMenuBtn');
+    document.getElementById('about-btn').textContent = t('aboutMenuBtn');
   }
 
   function render() {
@@ -972,6 +996,14 @@
     dropdown.classList.remove('open');
     openLangModal();
   });
+
+  document.getElementById('about-btn').addEventListener('click', () => {
+    dropdown.classList.remove('open');
+    document.getElementById('about-modal').style.display = 'flex';
+  });
+
+  const aboutModal = document.getElementById('about-modal');
+  aboutModal.addEventListener('click', e => { if (e.target === aboutModal) aboutModal.style.display = 'none'; });
 
   const langModal = document.getElementById('lang-modal');
   function openLangModal() {
