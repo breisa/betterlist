@@ -668,7 +668,7 @@
     const selfName = (window.webxdc && window.webxdc.selfName) || 'User';
     const listName = state.listName || 'Shopping List';
     const L = LANGS[lang];
-    let infoMsg = L.info_updated(selfName, listName);
+    let infoMsg = null;
     switch (op.type) {
       case 'add':           infoMsg = L.info_add(selfName, listName); break;
       case 'check':         infoMsg = L.info_check(selfName, listName); break;
@@ -677,8 +677,6 @@
       case 'clear-all':     infoMsg = L.info_clearAll(selfName, listName); break;
       case 'rename':        infoMsg = L.info_rename(selfName, listName); break;
       case 'edit':          infoMsg = L.info_edit(selfName, listName); break;
-      case 'reorder':       infoMsg = L.info_reorder(selfName, listName); break;
-      case 'sort-toggle':   infoMsg = L.info_sortToggle(selfName, listName); break;
     }
 
     if (window.webxdc) {
