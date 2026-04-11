@@ -546,7 +546,8 @@
     return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
 
-  function formatItemText(text) {
+  function formatItemText(text, checked) {
+    if (checked) return escapeHtml(text);
     const match = text.match(/^(\d+(?:[.,]\d+)?[a-zA-Z]*)\s[^\s]+/);
     if (match && match[1].length > 0) {
       return `<span class="item-amount">${escapeHtml(match[1])}</span>${escapeHtml(text.slice(match[1].length))}`;
@@ -807,7 +808,7 @@
         <div class="checkbox" data-check="${item.id}">
           ${item.checked ? `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 6 5 9 10 3"/></svg>` : ''}
         </div>
-        <div class="item-text" data-text="${item.id}">${formatItemText(item.text)}</div>
+        <div class="item-text" data-text="${item.id}">${formatItemText(item.text, item.checked)}</div>
         <button class="delete-btn" data-del="${item.id}" title="${escapeHtml(t('deleteItem'))}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>`;
