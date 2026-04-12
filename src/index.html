@@ -411,13 +411,22 @@
       background: var(--surface);
       border-radius: var(--radius) var(--radius) 0 0;
       width: 100%; max-width: 480px;
-      padding: 8px 0 max(env(safe-area-inset-bottom), 16px);
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 0 0 max(env(safe-area-inset-bottom), 16px);
     }
     .modal-title {
       padding: 14px 20px 10px;
       font-weight: 700; font-size: 12px;
       color: var(--text-muted);
       text-transform: uppercase; letter-spacing: 0.6px;
+      flex-shrink: 0;
+    }
+    .modal-scroll-body {
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
     .lang-option {
       display: flex; align-items: center; justify-content: space-between;
@@ -535,7 +544,7 @@
 <div id="lang-modal" class="modal-overlay" style="display:none">
   <div class="modal-sheet">
     <div class="modal-title" id="lang-modal-title">Language</div>
-    <div id="lang-options"></div>
+    <div class="modal-scroll-body"><div id="lang-options"></div></div>
   </div>
 </div>
 
@@ -784,9 +793,9 @@
     document.getElementById('sort-toggle-btn').title = t('sortTitle');
     document.getElementById('clear-checked-btn').title = t('clearCheckedTitle');
     document.getElementById('menu-btn').title = t('menuTitle');
-    document.getElementById('clear-all-btn').textContent = t('clearAll');
-    document.getElementById('lang-btn').textContent = t('langMenuBtn');
-    document.getElementById('about-btn').textContent = t('aboutMenuBtn');
+    document.getElementById('clear-all-label').textContent = t('clearAll');
+    document.getElementById('lang-label').textContent = t('langMenuBtn');
+    document.getElementById('about-label').textContent = t('aboutMenuBtn');
   }
 
   function render() {
