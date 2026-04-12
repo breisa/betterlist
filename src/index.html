@@ -440,6 +440,19 @@
       word-break: break-all;
     }
     .about-body a:hover { text-decoration: underline; }
+    .about-icon {
+      display: block;
+      width: 144px;
+      height: 144px;
+      margin: 12px auto 0px;
+      object-fit: contain;
+    }
+    .about-version {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-top: 0px;
+      margin-bottom: 4px;
+    }
 
     /* ── Confetti Canvas ── */
     #confetti-canvas {
@@ -452,6 +465,13 @@
     }
   </style>
   <script src="langs.js"></script>
+  <script src="version.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var el = document.getElementById('about-version');
+      if (el && typeof APP_VERSION !== 'undefined') el.textContent = APP_VERSION;
+    });
+  </script>
 </head>
 <body>
 
@@ -510,7 +530,13 @@
 <div id="about-modal" class="modal-overlay" style="display:none">
   <div class="modal-sheet">
     <div class="modal-title">About</div>
+    <div class="modal-scroll-body">
+      <div class="about-body" style="text-align:center">
+        <img src="icon.png" class="about-icon" alt="BetterList icon">
+        <div class="about-version" id="about-version"></div>
+      </div>
     <p class="about-body">Hey there! If you spot a bug or have an idea, please submit it at <a href="https://github.com/breisa/betterlist" target="_blank" rel="noopener">https://github.com/breisa/betterlist</a>.</p>
+    </div>
   </div>
 </div>
 
