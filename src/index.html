@@ -730,7 +730,7 @@
       window.webxdc.sendUpdate({
         payload: op,
         document: listName,
-        summary: `${state.items.filter(i => !i.checked).length} items`,
+        summary: L.summaryItems(state.items.filter(i => !i.checked).length),
         info: infoMsg
       }, "");
     }

@@ -28,6 +28,7 @@ const LANGS = {
     info_clearAll:    (n, l) => `${n} cleared all items on '${l}'`,
     info_rename:      (n, l) => `${n} renamed the list to '${l}'`,
     info_edit:        (n, l) => `${n} edited an item on '${l}'`,
+    summaryItems:     n => `${n} item${n === 1 ? '' : 's'}`,
   },
   de: {
     nativeName: 'Deutsch',
@@ -55,6 +56,7 @@ const LANGS = {
     info_clearAll:    (n, l) => `${n} hat alle Elemente in '${l}' gelöscht`,
     info_rename:      (n, l) => `${n} hat die Liste in '${l}' umbenannt`,
     info_edit:        (n, l) => `${n} hat ein Element in '${l}' bearbeitet`,
+    summaryItems:     n => `${n} Element${n === 1 ? '' : 'e'}`,
   },
   zh: {
     nativeName: '中文',
@@ -82,6 +84,7 @@ const LANGS = {
     info_clearAll:    (n, l) => `${n} 清除了 '${l}' 中的所有项目`,
     info_rename:      (n, l) => `${n} 将列表重命名为 '${l}'`,
     info_edit:        (n, l) => `${n} 编辑了 '${l}' 中的一个项目`,
+    summaryItems:     n => `${n} 项`,
   },
   hi: {
     nativeName: 'हिन्दी',
@@ -109,6 +112,7 @@ const LANGS = {
     info_clearAll:    (n, l) => `${n} ने '${l}' पर सभी आइटम साफ किए`,
     info_rename:      (n, l) => `${n} ने सूची का नाम '${l}' रख दिया`,
     info_edit:        (n, l) => `${n} ने '${l}' पर एक आइटम संपादित किया`,
+    summaryItems:     n => `${n} आइटम`,
   },
   es: {
     nativeName: 'Español',
@@ -136,6 +140,7 @@ const LANGS = {
     info_clearAll:    (n, l) => `${n} limpió todos los elementos en '${l}'`,
     info_rename:      (n, l) => `${n} renombró la lista a '${l}'`,
     info_edit:        (n, l) => `${n} editó un elemento en '${l}'`,
+    summaryItems:     n => `${n} elemento${n === 1 ? '' : 's'}`,
   },
   pt: {
     nativeName: 'Português',
@@ -163,6 +168,7 @@ const LANGS = {
     info_clearAll:    (n, l) => `${n} limpou todos os itens em '${l}'`,
     info_rename:      (n, l) => `${n} renomeou a lista para '${l}'`,
     info_edit:        (n, l) => `${n} editou um item em '${l}'`,
+    summaryItems:     n => `${n} item${n === 1 ? '' : 'ns'}`,
   },
   fr: {
     nativeName: 'Français',
@@ -190,6 +196,7 @@ const LANGS = {
     info_clearAll:    (n, l) => `${n} a effacé tous les articles sur '${l}'`,
     info_rename:      (n, l) => `${n} a renommé la liste en '${l}'`,
     info_edit:        (n, l) => `${n} a modifié un article sur '${l}'`,
+    summaryItems:     n => `${n} article${n === 1 ? '' : 's'}`,
   },
   it: {
     nativeName: 'Italiano',
@@ -217,6 +224,7 @@ const LANGS = {
     info_clearAll:    (n, l) => `${n} ha cancellato tutti gli elementi da '${l}'`,
     info_rename:      (n, l) => `${n} ha rinominato la lista in '${l}'`,
     info_edit:        (n, l) => `${n} ha modificato un elemento su '${l}'`,
+    summaryItems:     n => `${n} element${n === 1 ? 'o' : 'i'}`,
   },
   ru: {
     nativeName: 'Русский',
@@ -244,6 +252,7 @@ const LANGS = {
     info_clearAll:    (n, l) => `${n} очистил(а) все элементы в '${l}'`,
     info_rename:      (n, l) => `${n} переименовал(а) список в '${l}'`,
     info_edit:        (n, l) => `${n} отредактировал(а) элемент в '${l}'`,
+    summaryItems:     n => `${n} элемент${n === 1 ? '' : n < 5 ? 'а' : 'ов'}`,
   },
   pl: {
     nativeName: 'Polski',
@@ -271,6 +280,7 @@ const LANGS = {
     info_clearAll:    (n, l) => `${n} wyczyścił(a) wszystkie elementy na '${l}'`,
     info_rename:      (n, l) => `${n} zmienił(a) nazwę listy na '${l}'`,
     info_edit:        (n, l) => `${n} edytował(a) element na '${l}'`,
+    summaryItems:     n => `${n} element${n === 1 ? '' : n < 5 ? 'y' : 'ów'}`,
   },
   nl: {
     nativeName: 'Nederlands',
@@ -298,5 +308,6 @@ const LANGS = {
     info_clearAll:    (n, l) => `${n} heeft alle items gewist op '${l}'`,
     info_rename:      (n, l) => `${n} heeft de lijst hernoemd naar '${l}'`,
     info_edit:        (n, l) => `${n} heeft een item bewerkt op '${l}'`,
+    summaryItems:     n => `${n} item${n === 1 ? '' : 's'}`,
   }
 };
